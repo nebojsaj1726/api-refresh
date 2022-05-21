@@ -1,67 +1,51 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
+import { useInterval } from "./useInterval";
 
 const App: React.FC = () => {
-  const [avgAge, setAvgAge] = useState<number>();
-  const [paused, setPaused] = useState<boolean>(false);
+  const [averageAge, setAverageAge] = useState(0);
+  const [count, setCount] = useState(10);
+  const [isRunning, setIsRunning] = useState(true);
 
-  const defaultTime: number = 10000;
-  let startTime: any = useRef(Date.now());
-  let timeDifference: any = useRef(defaultTime);
-  let timerId: any = useRef();
-
-  const getAvgAge = () => {
+  const getAverageAge = () => {
     axios.get("https://randomuser.me/api/?results=10").then((res) => {
       const usersAgeArray: number[] = [];
-
       res.data.results.map((user: { dob: { age: number } }) =>
         usersAgeArray.push(user.dob.age)
       );
-
       const sum = usersAgeArray.reduce((a: number, b: number) => a + b, 0);
       const averageAge = sum / usersAgeArray.length;
-
-      setAvgAge(averageAge);
+      setAverageAge(averageAge);
     });
   };
 
   useEffect(() => {
-    getAvgAge();
+    getAverageAge();
   }, []);
 
-  useEffect(() => {
-    if (!paused) {
-      startTime.current = Date.now(); // set start time used to calculate difference between "Start"/"Stop" clicks
-
-      timerId.current = setInterval(() => {
-        timeDifference.current = defaultTime; // reset timer to default value 10000msec when API call is successfull
-        getAvgAge();
-      }, timeDifference.current);
-    }
-
-    if (paused) {
-      clearInterval(timerId.current);
-
-      if (timeDifference.current === defaultTime) {
-        timeDifference.current = defaultTime - (Date.now() - startTime.current);
-        // first click on "Stop" button calculates time diff with default time 10000msec
+  useInterval(
+    () => {
+      if (count > 0) {
+        setCount(count - 1);
       } else {
-        timeDifference.current =
-          timeDifference.current - (Date.now() - startTime.current);
-        // ... others calculated with previous time diff value, for multiple rapid clicks on "Start"/"Stop" button
+        getAverageAge();
+        setCount(10);
       }
-    }
-
-    return () => clearInterval(timerId.current);
-  }, [paused, avgAge]);
+    },
+    isRunning ? 1000 : null
+  );
 
   return (
-    <div className="App">
-      <h3>Prosecna starost korisnika: {avgAge}</h3>
-      <button onClick={() => setPaused(!paused)}>
-        {paused ? "Start" : "Stop"}
+    <div className="App" style={{ paddingTop: "50px" }}>
+      <h2>Average age of users: {averageAge}</h2>
+      <button
+        onClick={() => setIsRunning(!isRunning)}
+        style={{ padding: "10px 20px" }}
+      >
+        {isRunning ? "Stop" : "Start"}
       </button>
+      {!isRunning && <p>Time to next refresh: {count}s</p>}
     </div>
   );
 };
