@@ -26,7 +26,7 @@ const App: React.FC = () => {
 
   useInterval(
     () => {
-      if (count > 0) {
+      if (count > 1) {
         setCount(count - 1);
       } else {
         getAverageAge();
@@ -45,7 +45,7 @@ const App: React.FC = () => {
       >
         {isRunning ? "Stop" : "Start"}
       </button>
-      {!isRunning && <p>Time to next refresh: {count}s</p>}
+      <p>Time to next refresh: {count}s</p>
     </div>
   );
 };
